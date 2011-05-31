@@ -62,7 +62,7 @@ def Clean_Database(database):
   connection.commit()
   cursor.close()
 
-def Load_Data(database, trips=None, times=None):
+def Load_Data(database, trips=None, times=None, stops=None, shapes=None):
   connection = sqlite.connect(database)
   cursor = connection.cursor()
   
@@ -70,7 +70,7 @@ def Load_Data(database, trips=None, times=None):
   if trips != None:
     f_in = open(trips, 'r')
     for line in f_in:
-      if line[0] != 'r':
+      if line[0] != 'r' and line[0] != "\r":
         li = line.split(",")
         route_id      = int(li[0])
         service_id    = li[1]
@@ -78,7 +78,7 @@ def Load_Data(database, trips=None, times=None):
         direction_id  = int(li[3])
         block_id      = int(li[4])
         shape_id      = int(li[5])
-        cursor.execute('INSERT INTO trips VALUES (?, ?, ?, ?, ?, ?)', (trip_id , route_id, service_id, direction_id, block_id, shape_id))
+        cursor.execute('INSERT INTO trips VALUES (?, ?, ?, ?, ?, ?);', (trip_id , route_id, service_id, direction_id, block_id, shape_id))
     f_in.close()
 
   # Load times data
@@ -93,7 +93,35 @@ def Load_Data(database, trips=None, times=None):
         stop_id               = int(li[3].strip())
         stop_sequence         = int(li[4].strip())
         shape_dist_traveled   = float(li[8].strip())
-        cursor.execute("INSERT INTO times VALUES (?, ?, ?, ?, ?, ?)", (trip_id , arrival_time, departure_time, stop_id, stop_sequence, shape_dist_traveled))
-  
+        cursor.execute("INSERT INTO times VALUES (?, ?, ?, ?, ?, ?);", (trip_id , arrival_time, departure_time, stop_id, stop_sequence, shape_dist_traveled))
+    f_in.close()
+    
+  # Load stops data
+  if stops != None:
+    f_in = open(stops, 'r')
+    for line in f_in:
+      if line[0] != 's' and line[0] != "\r":
+        li = line.split(",")
+        stop_id = li[0]
+        name    = li[2]
+        lat     = li[4]
+        lon     = li[5]
+        cursor.execute("INSERT INTO stops VALUES (?, ?, ?, ?);", (stop_id, name, lat, lon))
+    f_in.close()
+    
+  # Load shapes data
+  if shapes != None:
+    f_in = open(shapes, 'r')
+    for line in f_in:
+      if line[0] != 's' and line[0] != "\r":
+        li = line.split(",")
+        shape_id  = int(  li[0].strip())
+        lat       = float(li[1].strip())
+        lon       = float(li[2].strip())
+        seq       = int(  li[3].strip())
+        dist      = float(li[4].strip())
+        cursor.execute("INSERT INTO shapes VALUES (?, ?, ?, ?, ?);", (shape_id, lat, lon, seq, dist))
+    f_in.close()
+      
   connection.commit()
   cursor.close()
