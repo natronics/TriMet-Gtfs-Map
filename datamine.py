@@ -119,6 +119,26 @@ def Get_Buses_In_Frame(gtfs_db, begin_t, end_t):
   cursor.close()
   return busses
 
+def interp(a,b,val):
+  slope = float(b[1] - a[1]) / float(b[0] - a[0])
+  inter = a[1] - slope * a[0]
+  return (val * slope) + inter
+  
+def interpolate_table(x, y, x_0):
+  for i, x_i in enumerate(x):
+    #print i, x_i - 1262340000, x_0 - 1262340000
+    if x_i >= x_0:
+      break
+  
+  if x_i == x_0: return y[i]
+  if i != 0:
+    a = (x[i-1], y[i-1])
+    b = (x[i], y[i])
+    dist = interp(a,b,x_0)
+    return dist
+  #print i, x_i, x_0
+  return 0
+   
 def Get_Bus_Location(gtfs_db, trip, begin_t, end_t):
   connection = sqlite.connect(gtfs_db)
   cursor = connection.cursor()
@@ -129,7 +149,7 @@ def Get_Bus_Location(gtfs_db, trip, begin_t, end_t):
     , times.shape_dist_traveled
   FROM trips
   JOIN times ON (times.trip_id = trips.trip_id)
-  WHERE trips.trip_id = %s
+  WHERE trips.trip_id = %d
    AND
    (    trips.service_id = 'A.302'
     OR  trips.service_id = 'W.302'
@@ -139,11 +159,84 @@ def Get_Bus_Location(gtfs_db, trip, begin_t, end_t):
  
   cursor.execute(sql)
   
+  times = []
+  dists = []
   for row in cursor:
-    ar_time = row[0]
-    de_time = row[1]
-    dist = row[2]
+    ar_time  = int(  row[0])
+    de_time  = int(  row[1])
+    dist     = float(row[2])
+    
+    if ar_time == de_time:
+      times.append(ar_time)
+      dists.append(dist)
+    else:
+      print "stop"
+    #print row
+  
+  #print times, dists
+  
+  dist_begin = interpolate_table(times, dists, begin_t)
+  dist_end = interpolate_table(times, dists, end_t)
+  
+  #print dist_begin, dist_end
+  
+  sql = """SELECT
+      shapes.lat
+    , shapes.lon
+    , shapes.distance
+    , shapes.sequence
+  FROM shapes
+  JOIN trips ON (trips.shape_id = shapes.shape_id)
+  WHERE trips.trip_id = %d
+  ORDER BY shapes.sequence ASC
+  """ % trip
+  
+  cursor.execute(sql)
+  
+  lats = []
+  lons = []
+  dists = []
+  for row in cursor:
+    lat = float(row[0])
+    lon = float(row[1])
+    dist = float(row[2])
+    
+    lats.append(lat)
+    lons.append(lon)
+    dists.append(dist)
     
     #print row
-    
   cursor.close()
+  
+  lat_begin = interpolate_table(dists, lats, dist_begin)
+  lon_begin = interpolate_table(dists, lons, dist_begin)
+  
+  lat_end = interpolate_table(dists, lats, dist_end)
+  lon_end = interpolate_table(dists, lons, dist_end)
+  
+  lats_frame = []
+  lons_frame = []
+  lats_frame.append(lat_begin)
+  lons_frame.append(lon_begin)
+  for i, dist in enumerate(dists):
+    if dist >= dist_begin and dist <= dist_end:
+      lats_frame.append(lats[i])
+      lons_frame.append(lons[i])
+  lats_frame.append(lat_end)
+  lons_frame.append(lon_end)
+  
+  """
+
+  import matplotlib.pyplot as plt
+
+  fig = plt.figure()
+  ax = fig.add_subplot(111)
+  ax.plot(lons, lats)
+  
+  ax.plot(lons_frame, lats_frame, 'r-')
+  
+  ax.plot(lons, lats, "g+")
+  plt.show()
+  """
+  
+  return lons_frame, lats_frame
