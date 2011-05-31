@@ -7,9 +7,9 @@ connection = sqlite.connect(Database)
 cursor = connection.cursor()
 
 sql = """SELECT 
-      *
+      *, strftime('%s', times.departure_time)
   FROM  times
-  ORDER BY times.arrival_time ASC
+  ORDER BY times.arrival_time DESC
   LIMIT 50;
 """
 

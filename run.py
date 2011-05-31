@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import database
+import datamine
 
 # Location of the data:
 folder = "/home/natronics/Data/TriMet/"
@@ -23,3 +24,7 @@ database.Create_Database(Database)
 # Load the data
 database.Load_Data(Database, trips=Trips, times=Times, stops=Stops, shapes=Shapes)
 
+
+print "Mining the data...\n"
+
+buses = datamine.Get_Data(Database)
