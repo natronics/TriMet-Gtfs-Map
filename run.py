@@ -12,6 +12,8 @@ Routs = folder + "routes.txt"
 # Path and name of database
 Database = "./trimet-gtfs.db"
 
+print "Loading Database...\n"
+
 # Uncomment this if you already created the database and want to startover clean
 #database.Clean_Database(Database)
 
@@ -20,3 +22,5 @@ database.Create_Database(Database)
 
 # Load the data
 database.Load_Data(Database, trips=Trips, times=Times, stops=Stops, shapes=Shapes)
+
+
