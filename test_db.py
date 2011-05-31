@@ -9,7 +9,7 @@ cursor = connection.cursor()
 sql = """SELECT 
       *
   FROM  times
-  JOIN  trips ON (trips.trip_id = times.trip_id)
+  ORDER BY times.arrival_time ASC
   LIMIT 50;
 """
 

@@ -23,4 +23,3 @@ database.Create_Database(Database)
 # Load the data
 database.Load_Data(Database, trips=Trips, times=Times, stops=Stops, shapes=Shapes)
 
-
