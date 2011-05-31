@@ -138,3 +138,32 @@ def Load_Data(database, trips=None, times=None, stops=None, shapes=None):
       
   connection.commit()
   cursor.close()
+
+def Clean_Frames_Db(db):
+  connection = sqlite.connect(db)
+  cursor = connection.cursor()
+  cursor.execute("DROP TABLE frames;")
+  cursor.execute("DROP TABLE segments;")
+  connection.commit()
+  cursor.close()
+  
+def Create_Frames_Db(db):
+  connection = sqlite.connect(db)
+  
+  # Create the frames Table
+  sql = """CREATE TABLE frames
+  (   frame INTEGER
+    , bus_id INTEGER
+    , route INTEGER
+    , segment_id INTEGER PRIMARY KEY
+  );"""
+  run_some_sql(connection, sql)
+  
+  # Create the segment Table
+  sql = """CREATE TABLE segments
+  (   segment_id INTEGER
+    , lat REAL
+    , lon REAL
+    , sequence INTEGER
+  );"""
+  run_some_sql(connection, sql)

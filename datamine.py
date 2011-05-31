@@ -239,4 +239,28 @@ def Get_Bus_Location(gtfs_db, trip, begin_t, end_t):
   plt.show()
   """
   
-  return lons_frame, lats_frame
+  return zip(lons_frame, lats_frame)
+
+def Push_Frame(gtfs_db, frames_db, frame_no, trip, segment):
+
+  # Gather some metadata
+  connection = sqlite.connect(gtfs_db)
+  cursor = connection.cursor()
+  sql = "SELECT trips.route_id FROM trips WHERE trips.trip_id = %d;" % trip
+  cursor.execute(sql)
+  for row in cursor:
+    route = row[0]
+  cursor.close()
+  
+  # Push data into frames db
+  connection = sqlite.connect(frames_db)
+  cursor = connection.cursor()
+  cursor.execute("INSERT INTO frames VALUES (?, ?, ?, NULL)", (frame_no, trip, route))
+  segment_id = cursor.lastrowid
+  
+  for i, seg in enumerate(segment):
+    #print segment_id, seg[0], seg[1], i
+    cursor.execute("INSERT INTO segments VALUES (?, ?, ?, ?)", (segment_id, seg[0], seg[1], i))
+  connection.commit()
+  cursor.close()
+  
