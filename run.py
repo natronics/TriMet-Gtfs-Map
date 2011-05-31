@@ -27,4 +27,12 @@ database.Load_Data(Database, trips=Trips, times=Times, stops=Stops, shapes=Shape
 
 print "Mining the data...\n"
 
-buses = datamine.Get_Data(Database)
+datamine.Build_Busses_Db(Database)
+
+print "Processing frame %d" % 453
+
+busses = datamine.Get_Buses_In_Frame(Database, 1262345400, 1262345500)
+
+#print len(busses)
+
+datamine.Get_Bus_Location(Database, busses[3], 1262345400, 1262345500)
