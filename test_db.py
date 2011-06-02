@@ -87,7 +87,7 @@ sql4 = """SELECT
   GROUP BY times.trip_id
 """
     
-cursor.execute(sql4)
+cursor.execute(sql2)
 
 i = 0
 for row in cursor:
