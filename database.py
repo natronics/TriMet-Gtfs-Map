@@ -30,8 +30,11 @@ def Create_Database(database):
     , stop_id INTEGER
     , stop_sequence INTEGER
     , shape_dist_traveled REAL
-  );"""
+  );
+  """
   run_some_sql(connection, sql)
+  run_some_sql(connection, "CREATE INDEX times_trip_id_idx ON times(trip_id);")
+  run_some_sql(connection, "CREATE INDEX times_arrival_time_idx ON times(arrival_time);")
 
   # Create the stops Table
   sql = """CREATE TABLE stops
@@ -51,6 +54,8 @@ def Create_Database(database):
     , distance REAL
   );"""
   run_some_sql(connection, sql)
+  run_some_sql(connection, "CREATE INDEX shapes_shape_id_idx ON shapes(shape_id);")
+  run_some_sql(connection, "CREATE INDEX times_distance_idx ON shapes(distance);")
   
 def Clean_Database(database):
   connection = sqlite.connect(database)
@@ -97,14 +102,14 @@ def Load_Data(database, trips=None, times=None, stops=None, shapes=None):
         # fix times that are like 25:45:19
         if arrival_time != "":
           if int(arrival_time[0:2]) > 23:
-             arrival_time = "2010-01-02 " + "%02d" % (int(arrival_time[0:2]) - 24) + arrival_time[2:]
+             arrival_time = "2011-01-02 " + "%02d" % (int(arrival_time[0:2]) - 24) + arrival_time[2:]
           else:
-            arrival_time = "2010-01-01 " + arrival_time
+            arrival_time = "2011-01-01 " + arrival_time
         if departure_time != "":
           if int(departure_time[0:2]) > 23:
-             departure_time = "2010-01-02 " + "%02d" % (int(departure_time[0:2]) - 24) + departure_time[2:]
+             departure_time = "2011-01-02 " + "%02d" % (int(departure_time[0:2]) - 24) + departure_time[2:]
           else:
-            departure_time = "2010-01-01 " + departure_time
+            departure_time = "2011-01-01 " + departure_time
         
         cursor.execute("INSERT INTO times VALUES (?, ?, ?, ?, ?, ?);", (trip_id , arrival_time, departure_time, stop_id, stop_sequence, shape_dist_traveled))
     f_in.close()
