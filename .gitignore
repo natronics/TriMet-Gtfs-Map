@@ -1,3 +1,5 @@
 *.db
 *.pyc
 *.db-journal
+frames/traces/*.png
+frames/points/*.png

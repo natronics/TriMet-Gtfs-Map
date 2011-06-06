@@ -83,11 +83,18 @@ sql4 = """SELECT
     , MIN(times.arrival_time) AS begin_time
     , MAX(times.arrival_time) AS end_time
   FROM times
-  WHERE times.trip_id IN (1975070,1975079,1975040)
+  WHERE times.trip_id = 1961857
   GROUP BY times.trip_id
 """
+
+sql5 = """SELECT
+    * 
+  FROM times
+  JOIN trips ON (trips.trip_id = times.trip_id)
+  WHERE times.trip_id = 1961857
+"""
     
-cursor.execute(sql2)
+cursor.execute(sql5)
 
 i = 0
 for row in cursor:

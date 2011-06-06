@@ -3,6 +3,7 @@ import datetime
 import database
 import datamine
 import render
+import matplotlib.pyplot as plt
 
 # Location of the data:
 folder = "/home/natronics/Data/TriMet/"
@@ -46,20 +47,17 @@ speed = 120 # seconds per frame
 animation_length = (animation_end_time - animation_begin_time).seconds
 number_of_frames = int(animation_length / speed)
 
+fig = plt.figure()
+
 # do frame
 for frame_no in range(1, number_of_frames + 1):
+  print "  + Frame %d out of %d" % (frame_no, number_of_frames)
   
   # Figure frame time
-  frametime = animation_begin_time + datetime.timedelta(seconds=speed)
-  print "  + Frame %d out of %d" % (frame_no, number_of_frames)
-
-  framedata[frame_no] = datamine.frame(Database, busses, frame_no, frametime)
-
-# Rendering
-
-print "\nRendering Frames:"
-
-render.Render_Frame_Traces(Database, 6, framedata[6])
-
-#for frame_no in range(1, number_of_frames + 1):
-#  print "  + Frame %d out of %d" % (frame_no, number_of_frames)
+  frame_begin_time  = animation_begin_time + datetime.timedelta(seconds=(speed*(frame_no-1)))
+  frame_end_time    = animation_begin_time + datetime.timedelta(seconds=(speed*(frame_no)))
+  
+  framedata = datamine.frame(Database, busses, frame_begin_time, frame_end_time)
+  #print framedata 
+  
+  render.Render_Frame_Traces(Database, frame_no, framedata, fig)
