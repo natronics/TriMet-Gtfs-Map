@@ -18,20 +18,22 @@ def Build_Busses_Db(gtfs_db):
       times.trip_id
     , MIN(times.arrival_time) AS begin_time
     , MAX(times.arrival_time) AS end_time
+    , trips.route_id
   FROM times
   JOIN trips ON (trips.trip_id = times.trip_id)
   WHERE
     (   trips.service_id = 'A.302'
     OR  trips.service_id = 'W.302'
     )
-  GROUP BY times.trip_id
+  GROUP BY times.trip_id, trips.route_id
   """
   cursor.execute(sql)
   for row in cursor:
     trip        = row[0]
     begin_time  = datetime.datetime.strptime(row[1], "%Y-%m-%d %H:%M:%S")
     end_time    = datetime.datetime.strptime(row[2], "%Y-%m-%d %H:%M:%S")
-    busses[trip] = {"begin": begin_time, "end": end_time}
+    route       = row[3]
+    busses[trip] = {"route": route, "begin": begin_time, "end": end_time}
   cursor.close()
 
   return busses
@@ -155,6 +157,6 @@ def frame(gtfs, busses, begin_datetime, end_datetime):
   for trip in active_busses:
     shape, begin_point  = get_bus_position(gtfs, trip, begin_datetime)
     shape, end_point    = get_bus_position(gtfs, trip, end_datetime)
-    frame_data[trip] = {"shape": shape, "begin_point": begin_point, "end_point": end_point}
+    frame_data[trip] = {"route": busses[trip]["route"], "shape": shape, "begin_point": begin_point, "end_point": end_point}
 
   return {"busses": active_busses, "data": frame_data}

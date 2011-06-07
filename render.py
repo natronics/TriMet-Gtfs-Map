@@ -1,29 +1,90 @@
 from pysqlite2 import dbapi2 as sqlite
 import matplotlib.pyplot as plt
+import matplotlib.path as mpath
+import matplotlib.patches as mpatches
 
-def Render_Frame_Traces(gtfs, frame, frame_data, fig):
+class render:
 
-  # Whole system
-  top_corner = (45.68, -123.32)
-  bot_corner = (45.25, -122.2301)
-
-  # Downtown
-  #top_corner = (45.5416, -122.7042)
-  #bot_corner = (45.4943, -122.6308)
-
-  busses = frame_data["busses"]
+  fig = {}
+  border = []
   
-  ax = fig.add_subplot(111)
+  xax = 0
+  yax = 0
   
-  for bus in busses:
-    lats, lons = get_one_bus_trace(gtfs, frame_data["data"][bus])
-    ax.plot(lons, lats)
-  
-  ax.axis([top_corner[1], bot_corner[1], bot_corner[0], top_corner[0]])
+  def __init__(self, top_corner, bot_corner):
+    self.border = (top_corner, bot_corner)
+    
+    grid_x = (bot_corner[1] - top_corner[1]) * 0.701375935
+    grid_y = (top_corner[0] - bot_corner[0])
 
-  plt.savefig("frames/traces/%04d" % frame, dpi=90)
-  plt.clf()
+    xax = 10
+    yax = 10
+    if grid_x < grid_y:
+      xax = 10 / (grid_y/float(grid_x))
+    else:
+      yax = 10 / (grid_x/float(grid_y))
+      
+    self.xax = xax
+    self.yax = yax
+
+    self.fig = plt.figure(figsize=(xax,yax), frameon=False)
   
+  def pick_color(self, route):
+    if   route == 90:  return "#ff5555"   # red
+    elif route == 100: return "#4499ee"   # blue
+    elif route == 190: return "#eedd44"   # yellow
+    elif route == 200: return "#55cc44"   # green
+   
+    return "#e7e7e7"
+    
+  def Render_Frame_Traces(self, gtfs, frame, frame_data):
+
+    busses = frame_data["busses"]
+    
+    ax = plt.axes([0,0,1,1])
+   
+    Path = mpath.Path
+    pathdata = [
+       (   Path.MOVETO, (self.border[0][1], self.border[0][0])),
+       (   Path.LINETO, (self.border[0][1], self.border[1][0])),
+       (   Path.LINETO, (self.border[1][1], self.border[1][0])),
+       (   Path.LINETO, (self.border[1][1], self.border[0][0])),
+       (Path.CLOSEPOLY, (self.border[0][1], self.border[0][0])),
+    ]
+
+    codes, verts = zip(*pathdata)
+    path = mpath.Path(verts, codes)
+    patch = mpatches.PathPatch(path, facecolor='black', alpha=0.3)
+    ax.add_patch(patch)
+      
+    for bus in busses:
+      lats, lons = get_one_bus_trace(gtfs, frame_data["data"][bus])
+      c = self.pick_color(frame_data["data"][bus]["route"])
+      ax.plot(lons, lats, '-', solid_capstyle='butt', color=c, linewidth=0.8, alpha=0.4)
+
+    
+    ax.axis([self.border[0][1], self.border[1][1], self.border[1][0], self.border[0][0]])
+    plt.axis('off')
+
+    plt.savefig("frames/traces/%04d" % frame, dpi=192, Transparent='Transparent')
+    plt.clf()
+
+  def Render_Frame_Point(self, frame, frame_data):
+    busses = frame_data["busses"]
+    
+    self.fig = plt.figure(figsize=(self.xax, self.yax), frameon=False)
+    ax = plt.axes([0,0,1,1])
+
+    for bus in busses:
+      end_point = frame_data["data"][bus]["end_point"]
+      lat = end_point["lat"]
+      lon = end_point["lon"]
+      ax.plot(lon, lat, '.', color="#eeeeee", markersize=0.8)
+    ax.axis([self.border[0][1], self.border[1][1], self.border[1][0], self.border[0][0]])
+    plt.axis('off')
+    plt.savefig("frames/points/%04d" % frame, dpi=192, Transparent='Transparent')
+    plt.close()
+    
 def get_one_bus_trace(gtfs, bus):
   connection = sqlite.connect(gtfs)
   cursor = connection.cursor()
@@ -34,6 +95,7 @@ def get_one_bus_trace(gtfs, bus):
   
   lats = []
   lons = []
+  
   
   lat = begin_point["lat"]
   lon = begin_point["lon"]
@@ -62,12 +124,13 @@ def get_one_bus_trace(gtfs, bus):
     if lat != 0 and lon != 0:
       lats.append(lat)
       lons.append(lon)
-  
+
   lat = end_point["lat"]
   lon = end_point["lon"]
   if lat != 0 and lon != 0:
       lats.append(lat)
       lons.append(lon)
+
   cursor.close()
   
   return lats, lons
